@@ -1,0 +1,43 @@
+# Claude Code
+.claude/
+
+# Obsidian
+.obsidian/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Node (if applicable)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Build artifacts
+*.xpi
+*.zip
+
+# Temp files
+*.tmp
+*.bak

@@ -1,0 +1,26 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PDF to Markdown converter">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1.2" stdDeviation="1.2" flood-color="#000000" flood-opacity="0.14"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect x="2" y="2" width="60" height="60" rx="12" fill="#f3f4f6"/>
+
+  <!-- PDF document -->
+  <g filter="url(#shadow)">
+    <path d="M10 12a4 4 0 0 1 4-4h14l6 6v18a4 4 0 0 1-4 4H14a4 4 0 0 1-4-4z" fill="#e74c3c"/>
+    <path d="M28 8v6h6" fill="#f29b93"/>
+    <text x="22" y="24" font-size="8" font-weight="800" fill="#ffffff" text-anchor="middle" font-family="Arial, sans-serif">PDF</text>
+  </g>
+
+
+
+  <!-- MD document -->
+  <g filter="url(#shadow)">
+    <path d="M30 28a4 4 0 0 1 4-4h14l6 6v18a4 4 0 0 1-4 4H34a4 4 0 0 1-4-4z" fill="#27ae60"/>
+    <path d="M48 24v6h6" fill="#7dd3a3"/>
+    <text x="42" y="40" font-size="8" font-weight="800" fill="#ffffff" text-anchor="middle" font-family="Arial, sans-serif">MD</text>
+  </g>
+</svg>

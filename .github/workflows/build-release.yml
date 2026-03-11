@@ -1,0 +1,24 @@
+name: Build XPI Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build XPI
+        run: |
+          cd src
+          zip -r ../pdf2md_v0.xpi .
+
+      - name: Upload XPI to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: pdf2md_v0.xpi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

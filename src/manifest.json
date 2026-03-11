@@ -1,0 +1,18 @@
+{
+  "manifest_version": 2,
+  "name": "PDF to Markdown",
+  "version": "0.1.0",
+  "description": "Convert PDF attachments to Markdown via Python",
+  "author": "pdf2md",
+  "icons": {
+    "96": "chrome/content/icons/favicon.svg"
+  },
+  "applications": {
+    "zotero": {
+      "id": "pdf2md@zotero.plugin",
+      "update_url": "https://github.com/pdf2md/pdf2md/releases/download/release/updates.json",
+      "strict_min_version": "7.0",
+      "strict_max_version": "8.*"
+    }
+  }
+}
