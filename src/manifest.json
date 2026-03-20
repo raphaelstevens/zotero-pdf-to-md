@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "PDF to Markdown",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Convert PDF attachments to Markdown via Python",
   "author": "pdf2md",
   "icons": {

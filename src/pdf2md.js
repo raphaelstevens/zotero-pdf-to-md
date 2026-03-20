@@ -86,15 +86,21 @@ var PDF2MD = {
 
   async _convertAll(win, pdfs) {
     const prefs = this._getPrefs();
-    let ok = 0, fail = 0;
+    let ok = 0;
+    const errors = [];
     for (const { path } of pdfs) {
       const outDir = (prefs.useCustomDir && prefs.customDir)
         ? prefs.customDir : PathUtils.parent(path);
       const res = await this._runPython(prefs.pythonPath, path, outDir, prefs.engine);
-      res ? ok++ : fail++;
+      if (res === true) {
+        ok++;
+      } else {
+        errors.push(PathUtils.filename(path) + ": " + (res || "unknown error"));
+      }
     }
-    Services.prompt.alert(win, "PDF to MD",
-      `Done: ${ok} converted` + (fail ? `, ${fail} failed.` : "."));
+    let msg = `Done: ${ok} converted`;
+    if (errors.length) msg += `\n\nFailed (${errors.length}):\n` + errors.join("\n");
+    Services.prompt.alert(win, "PDF to MD", msg);
   },
 
   async _runPython(pythonPath, pdfPath, outDir, engine) {
@@ -140,12 +146,13 @@ var PDF2MD = {
       let out = "";
       try { out = await IOUtils.readUTF8(tmpOut); } catch (_) {}
       Zotero.debug("[pdf2md] output: " + out);
-      const success = out.trim().startsWith("OK:");
-      if (!success) Zotero.logError("[pdf2md] failed output: " + out);
-      return success;
+      if (out.trim().startsWith("OK:")) return true;
+      const errMsg = out.trim() || "no output — check Python path";
+      Zotero.logError("[pdf2md] failed: " + errMsg);
+      return errMsg;
     } catch (e) {
       Zotero.logError("[pdf2md] exec: " + e);
-      return false;
+      return e.message;
     }
   },
 

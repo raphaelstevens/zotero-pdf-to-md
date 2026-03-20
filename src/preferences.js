@@ -17,7 +17,18 @@ function _pdf2mdPrefsInit() {
   const ss = (k, v) => Services.prefs.getBranch(B).setStringPref(k, v);
   const sb = (k, v) => Services.prefs.getBranch(B).setBoolPref(k, v);
 
-  $("pythonPath").value     = gs("pythonPath", "");
+  const defaultPython = Zotero.isMac ? "/usr/local/bin/python3"
+                      : Zotero.isLinux ? "/usr/bin/python3"
+                      : "";
+  if (Zotero.isMac || Zotero.isLinux) {
+    $("pythonPath").placeholder = defaultPython + "  (run 'which python3' in Terminal to confirm)";
+  }
+
+  const savedPath = gs("pythonPath", "");
+  if (!savedPath && defaultPython) {
+    ss("pythonPath", defaultPython);
+  }
+  $("pythonPath").value = savedPath || defaultPython;
   $("engine").value         = gs("engine", "markitdown");
   $("useCustomDir").checked = gb("useCustomDir", false);
   $("customDir").value      = gs("customDir", "");
@@ -74,15 +85,31 @@ function _pdf2mdPrefsInit() {
 
   $("testBtn").addEventListener("click", async () => {
     const py = $("pythonPath").value.trim();
-    if (!py) { show("No path set", false); return; }
+    if (!py) { show("No path set — enter the full path to your Python executable", false); return; }
     show("Testing...", true);
     try {
+      // Check file exists before attempting to run
+      const exists = await IOUtils.exists(py);
+      if (!exists) {
+        show("File not found: " + py + " — on Mac, run 'which python3' in Terminal to find the correct path", false);
+        return;
+      }
       const tmp = Services.dirsvc.get("TmpD", Ci.nsIFile).path;
       const tmpOut    = PathUtils.join(tmp, "pdf2md_test_out.txt");
       const tmpScript = PathUtils.join(tmp, "pdf2md_test.py");
       const outJson = JSON.stringify(tmpOut);
       await IOUtils.writeUTF8(tmpScript,
-        `from pathlib import Path\nimport sys\nPath(${outJson}).write_text("Python " + sys.version, encoding="utf-8")\n`
+        `from pathlib import Path\nimport sys\n` +
+        `try:\n` +
+        `    import markitdown\n` +
+        `    from markitdown._converters import PdfConverter\n` +
+        `    msg = "OK: Python " + sys.version.split()[0] + ", markitdown " + markitdown.__version__\n` +
+        `except ImportError as e:\n` +
+        `    if "markitdown" not in str(e):\n` +
+        `        msg = "ERROR: markitdown[pdf] missing. Run: " + sys.executable + " -m pip install \\"markitdown[pdf]\\""\n` +
+        `    else:\n` +
+        `        msg = "ERROR: markitdown not found. Run: " + sys.executable + " -m pip install \\"markitdown[pdf]\\""\n` +
+        `Path(${outJson}).write_text(msg, encoding="utf-8")\n`
       );
       const pyFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
       pyFile.initWithPath(py);
@@ -98,7 +125,11 @@ function _pdf2mdPrefsInit() {
       });
       let txt = "";
       try { txt = await IOUtils.readUTF8(tmpOut); } catch (_) {}
-      show(txt.trim() || "No output — check path", txt.toLowerCase().includes("python"));
+      if (!txt.trim()) {
+        show("Python ran but produced no output — check Zotero error console (Help → Debug Output Logging)", false);
+      } else {
+        show(txt.trim(), txt.toLowerCase().includes("python"));
+      }
     } catch(e) { show("Error: " + e.message, false); }
   });
 
