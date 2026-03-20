@@ -2,7 +2,7 @@
 
 A Zotero plugin to convert PDF attachments to Markdown via a right-click menu.
 
-![Icon](src/chrome/content/icons/favicon.svg)
+![PDFtoMD](/zotero-pdf-to-md.jpg)
 
 **Version:** 0.2.0 | **Target:** Zotero 8.0.4+ | **License:** MIT
 
@@ -58,7 +58,7 @@ Edit → Preferences → PDF to MD:
 
 **Python not found** — use the full path (e.g. `C:\Python311\python.exe` or `/usr/bin/python3`), not just `python`.
 
-**MarkItDown not found** — run `pip install markitdown`.
+**MarkItDown not found** — run `pip install markitdown[PDF]` `pip3 install markitdown[PDF]`
 
 **Conversion fails** — check Zotero console: Tools → Developer Tools → Console.
 
@@ -94,8 +94,6 @@ cd src/
 zip -r ../pdf2md_v0.xpi .
 ```
 
-Or create a GitHub Release — the CI workflow builds and attaches the XPI automatically.
-
 ---
 
 ## Further Development
@@ -111,4 +109,4 @@ Or create a GitHub Release — the CI workflow builds and attaches the XPI autom
 
 MIT — see [LICENSE](LICENSE).
 
-Made by [@rsrs](https://github.com/rsrs)
+Made by ❤️ [@raphaelstevens](https://github.com/raphaelstevens)

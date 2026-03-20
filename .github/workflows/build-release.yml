@@ -13,12 +13,14 @@ jobs:
 
       - name: Build XPI
         run: |
+          VERSION=$(jq -r .version src/manifest.json)
           cd src
-          zip -r ../pdf2md_v0.xpi .
+          zip -r "../pdf2md_v${VERSION}.xpi" .
+          echo "XPI_FILE=pdf2md_v${VERSION}.xpi" >> $GITHUB_ENV
 
       - name: Upload XPI to Release
         uses: softprops/action-gh-release@v1
         with:
-          files: pdf2md_v0.xpi
+          files: ${{ env.XPI_FILE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
