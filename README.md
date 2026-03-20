@@ -2,7 +2,8 @@
 
 A Zotero plugin to convert PDF attachments to Markdown via a right-click menu.
 
-![PDFtoMD](/zotero-pdf-to-md.jpg)
+| ![PDFtoMD](/zotero-pdf-to-md_1.jpg) | ![PDFtoMD](/zotero-pdf-to-md-2.jpg) |
+|------|------|
 
 **Version:** 0.2.0 | **Target:** Zotero 8.0.4+ | **License:** MIT
 
