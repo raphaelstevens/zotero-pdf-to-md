@@ -99,17 +99,38 @@ function _pdf2mdPrefsInit() {
       const tmpScript = PathUtils.join(tmp, "pdf2md_test.py");
       const outJson = JSON.stringify(tmpOut);
       await IOUtils.writeUTF8(tmpScript,
-        `from pathlib import Path\nimport sys\n` +
-        `try:\n` +
-        `    import markitdown\n` +
-        `    from markitdown._converters import PdfConverter\n` +
-        `    msg = "OK: Python " + sys.version.split()[0] + ", markitdown " + markitdown.__version__\n` +
-        `except ImportError as e:\n` +
-        `    if "markitdown" not in str(e):\n` +
-        `        msg = "ERROR: markitdown[pdf] missing. Run: " + sys.executable + " -m pip install \\"markitdown[pdf]\\""\n` +
-        `    else:\n` +
-        `        msg = "ERROR: markitdown not found. Run: " + sys.executable + " -m pip install \\"markitdown[pdf]\\""\n` +
-        `Path(${outJson}).write_text(msg, encoding="utf-8")\n`
+        `from pathlib import Path\nimport sys, io, tempfile, os\n` +
+        `def run():\n` +
+        `    try:\n` +
+        `        import markitdown\n` +
+        `    except ImportError as e:\n` +
+        `        return "ERROR: markitdown not installed for " + sys.executable + " (" + str(e) + "). Run: " + sys.executable + " -m pip install \\"markitdown[pdf]\\""\n` +
+        `    ver = getattr(markitdown, "__version__", "?")\n` +
+        `    try:\n` +
+        `        md = markitdown.MarkItDown()\n` +
+        `    except Exception as e:\n` +
+        `        return "ERROR: markitdown " + ver + " loaded but MarkItDown() failed: " + type(e).__name__ + ": " + str(e)\n` +
+        `    # Probe PDF support with a minimal valid PDF\n` +
+        `    pdf_bytes = (b"%PDF-1.1\\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\\n"\n` +
+        `                 b"2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\\n"\n` +
+        `                 b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 100 100]>>endobj\\n"\n` +
+        `                 b"xref\\n0 4\\n0000000000 65535 f\\n0000000010 00000 n\\n"\n` +
+        `                 b"0000000053 00000 n\\n0000000100 00000 n\\n"\n` +
+        `                 b"trailer<</Size 4/Root 1 0 R>>\\nstartxref\\n160\\n%%EOF\\n")\n` +
+        `    fd, tmp_pdf = tempfile.mkstemp(suffix=".pdf")\n` +
+        `    try:\n` +
+        `        os.write(fd, pdf_bytes); os.close(fd)\n` +
+        `        md.convert(tmp_pdf)\n` +
+        `    except Exception as e:\n` +
+        `        m = (type(e).__name__ + ": " + str(e)).lower()\n` +
+        `        if "pdfminer" in m or "pdf" in m and "missing" in m or "no module" in m:\n` +
+        `            return "ERROR: markitdown " + ver + " OK but PDF support missing. Run: " + sys.executable + " -m pip install \\"markitdown[pdf]\\""\n` +
+        `        return "ERROR: markitdown " + ver + " PDF probe failed: " + type(e).__name__ + ": " + str(e)\n` +
+        `    finally:\n` +
+        `        try: os.unlink(tmp_pdf)\n` +
+        `        except Exception: pass\n` +
+        `    return "OK: Python " + sys.version.split()[0] + ", markitdown " + ver + " (PDF support OK)"\n` +
+        `Path(${outJson}).write_text(run(), encoding="utf-8")\n`
       );
       const pyFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
       pyFile.initWithPath(py);

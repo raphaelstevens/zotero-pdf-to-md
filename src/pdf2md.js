@@ -25,6 +25,8 @@ var PDF2MD = {
       const item = doc.createXULElement("menuitem");
       item.id = "pdf2md-menuitem";
       item.setAttribute("label", "Transform PDF to MD");
+      item.setAttribute("class", "menuitem-iconic");
+      item.setAttribute("image", this.rootURI + "chrome/content/icons/favicon.svg");
       item.addEventListener("command", () => this._handleConvert(win));
       menu.appendChild(item);
       Zotero.debug("[pdf2md] menu item injected, total children: " + menu.childElementCount);
@@ -89,8 +91,13 @@ var PDF2MD = {
     let ok = 0;
     const errors = [];
     for (const { path } of pdfs) {
-      const outDir = (prefs.useCustomDir && prefs.customDir)
-        ? prefs.customDir : PathUtils.parent(path);
+      let outDir = PathUtils.parent(path);
+      if (prefs.useCustomDir) {
+        const d = (prefs.customDir || "").trim();
+        if (d && await IOUtils.exists(d)) {
+          outDir = d;
+        }
+      }
       const res = await this._runPython(prefs.pythonPath, path, outDir, prefs.engine);
       if (res === true) {
         ok++;
@@ -107,6 +114,7 @@ var PDF2MD = {
     const tmp = Services.dirsvc.get("TmpD", Ci.nsIFile).path;
     const tmpScript = PathUtils.join(tmp, "pdf_to_md_zotero.py");
     const tmpOut    = PathUtils.join(tmp, "pdf_to_md_out.txt");
+    const tmpCfg    = PathUtils.join(tmp, "pdf_to_md_cfg.json");
 
     // Extract Python script from XPI
     try {
@@ -117,22 +125,28 @@ var PDF2MD = {
       return false;
     }
 
+    // Pass paths via a UTF-8 JSON file to avoid Windows ANSI argv encoding issues
+    // (nsIProcess.runAsync mangles non-ASCII characters in args on Windows)
     try {
-      // Use nsIProcess directly -- avoids exec() exit-code issues on Windows
+      await IOUtils.writeUTF8(tmpCfg, JSON.stringify({
+        input:  pdfPath,
+        output: outDir,
+        engine: engine || "markitdown",
+        outfile: tmpOut,
+      }));
+    } catch (e) {
+      Zotero.logError("[pdf2md] write cfg: " + e);
+      return "failed to write config: " + e.message;
+    }
+
+    try {
       const pyFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
       pyFile.initWithPath(pythonPath);
       const proc = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
       proc.init(pyFile);
 
-      const args = [
-        tmpScript,
-        "--input", pdfPath,
-        "--output", outDir,
-        "--engine", engine || "markitdown",
-        "--outfile", tmpOut,
-      ];
+      const args = [tmpScript, "--config", tmpCfg];
 
-      // Clear stale output from any previous run
       try { await IOUtils.remove(tmpOut); } catch (_) {}
 
       await new Promise((resolve) => {
@@ -145,6 +159,8 @@ var PDF2MD = {
 
       let out = "";
       try { out = await IOUtils.readUTF8(tmpOut); } catch (_) {}
+      try { await IOUtils.remove(tmpCfg); } catch (_) {}
+      try { await IOUtils.remove(tmpOut); } catch (_) {}
       Zotero.debug("[pdf2md] output: " + out);
       if (out.trim().startsWith("OK:")) return true;
       const errMsg = out.trim() || "no output — check Python path";

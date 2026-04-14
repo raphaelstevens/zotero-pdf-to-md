@@ -5,14 +5,14 @@ A Zotero plugin to convert PDF attachments to Markdown via a right-click menu.
 | ![PDFtoMD](/zotero-pdf-to-md-1.jpg) | ![PDFtoMD](/zotero-pdf-to-md-2.jpg) |
 |------|------|
 
-**Version:** 0.2.0 | **Target:** Zotero 8.0.4+ | **License:** MIT
+**Version:** 0.2.5 | **Target:** Zotero 7.0+ | **License:** MIT
 
 ---
 
 ## Requirements
 
-- Zotero 8.0.4+
-- Python 3.8+ with `markitdown`:
+- Zotero 7.0+
+- Python 3.8+ with `markitdown[pdf]`:
 
 ```bash
 pip install "markitdown[pdf]"
@@ -22,7 +22,7 @@ pip install "markitdown[pdf]"
 
 ## Installation
 
-1. Download `pdf2md_v0.xpi` from [Releases](https://github.com/rsrs/zotero-pdf-to-md/releases)
+1. Download `pdf2md.xpi` from [Releases](https://github.com/rsrs/zotero-pdf-to-md/releases)
 2. Zotero → Tools → Add-ons → Install Add-on From File
 3. Restart Zotero
 
@@ -57,11 +57,15 @@ Edit → Preferences → PDF to MD:
 
 ## Troubleshooting
 
-**Python not found** — use the full path (e.g. `C:\Python311\python.exe` or `/usr/bin/python3`), not just `python`.
+**Python not found** — use the full path (e.g. `C:\Python311\python.exe` or `/usr/bin/python3`), not just `python`. Zotero uses `nsIProcess` which requires an absolute path and does not consult your `PATH` environment variable.
 
-**MarkItDown not found** — run `pip install markitdown[PDF]` `pip3 install markitdown[PDF]`
+**MarkItDown not found** — install for the *same* Python you pointed Zotero to: `"<that python>" -m pip install "markitdown[pdf]"`.
 
-**Conversion fails** — check Zotero console: Tools → Developer Tools → Console.
+**PDF path not found / special characters** — resolved automatically: the script folds typographic punctuation (`' ' " " – —`, non-breaking spaces) to ASCII and scans the parent folder if the literal path doesn't match.
+
+**Invalid output directory** — if *Custom folder* is checked but the path is empty or doesn't exist, the plugin falls back to the PDF's own folder.
+
+**Conversion fails** — check Zotero console: Tools → Developer Tools → Run JavaScript / Error Console.
 
 ---
 
@@ -72,8 +76,9 @@ Right-click PDF → Python script runs → MarkItDown parses → .md written to 
 ```
 
 - Uses `nsIProcess` (not `exec`) for Windows compatibility
-- Python writes output to a temp file; Zotero reads it back
-- Python script is extracted from the XPI at runtime
+- Paths and options are passed to Python via a UTF-8 JSON config file (avoids Windows ANSI `argv` mangling non-ASCII characters)
+- Python writes the result to a temp file; Zotero reads it back, then both temp files are deleted
+- The Python script is extracted from the XPI at runtime
 
 ### Project Files
 
@@ -92,7 +97,14 @@ Right-click PDF → Python script runs → MarkItDown parses → .md written to 
 
 ```bash
 cd src/
-zip -r ../pdf2md_v0.xpi .
+zip -r ../pdf2md.xpi .
+```
+
+Or on Windows (PowerShell):
+
+```powershell
+Compress-Archive -Path src/* -DestinationPath pdf2md.zip -Force
+Move-Item -Force pdf2md.zip pdf2md.xpi
 ```
 
 ---
